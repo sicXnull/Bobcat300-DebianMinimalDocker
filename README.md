@@ -16,8 +16,10 @@ Uses the following docker images:
   - https://github.com/sicXnull/BobcatDashboard
 
 ## Ansible config:
-1. Run a `ssh-copy-id root@192.168.x.x` to the host, update `hosts.ini` file
-2. Install:  
+1. Install the debian image provided by https://github.com/sicXnull/Bobcat300-Debian
+2. Run a `ssh-copy-id root@192.168.x.x` to the host, update `hosts.ini` file
+3. Set `REGION` in `bobcat.yml` file
+4. Install:  
 ```
 ansible-playbook -i hosts.ini bobcat.yml
 ```
