@@ -17,13 +17,19 @@ Uses the following docker images:
  
 ## Preparations
 1. Install the debian image provided by https://github.com/sicXnull/Bobcat300-Debian
-2. Remove the dashboard and additional packages like strongswan, nginx-common, php etc (to your liking)
-```
-sh /var/dashboard/uninstall.sh
-apt remove php* nginx* strongswan* openvpn*
-reboot
-```
-3. Ensure latest update: `apt update && apt upgrade -y`
+2. Remove the dashboard and additional packages like strongswan, nginx-common, php etc (to your liking)  
+  ```
+  sh /var/dashboard/uninstall.sh
+  apt remove -y php* nginx* strongswan* openvpn*
+  apt -y autoremove
+  ```
+  Reduce SD wear
+  ```
+  systemctl disable rsyslog
+  echo "Storage=volatile" >> /etc/systemd/journald.conf
+  ```
+
+3. Ensure latest update: `apt update && apt upgrade -y && reboot`
 4. Reboot and install docker compose `apt install docker-compose`
 5. Set root user password `passwd`
 6. Consider adding ssh-keys and disabling password based auth by adding `PasswordAuthentication no` to `/etc/ssh/ssh_config` 
@@ -31,7 +37,7 @@ reboot
 ## Install
 Clone the project
 ```
-git clone https://github.com/metrafonic/Bobcat300-DebianMinimalDocker && cd Bobcat300-DebianMinimalDocker
+git clone https://github.com/metrafonic/Bobcat300-DebianMinimalDocker bobcat && cd bobcat
 ```
 Modify the `REGION` value in the `docker-compose.yml`. The `REGION` can be one of the following values:  
 `US915 | EU868 | EU433 | CN470 | CN779 | AU915 | AS923 | KR920 | IN865`
