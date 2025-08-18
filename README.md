@@ -44,11 +44,15 @@ Modify the `REGION` value in the `docker-compose.yml`. The `REGION` can be one o
 
 Start the pf once, so that it creates the region file. We must modify it.
 ```
-docker-compose up pktfwd -d && sleep 1 && docker compose down
+docker-compose up -d pktfwd && sleep 1 && docker-compose down
 ```
 Edit `packet_forwarder/configs/global_conf.json` and replace and replace the `spidev_path:` value with:
 ```
 "spidev_path": "/dev/spidev1.0",
+```
+Remove the line:
+```
+"gps_i2c_path": "/dev/i2c-1",
 ```
 Start again:
 ```
