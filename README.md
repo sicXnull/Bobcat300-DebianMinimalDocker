@@ -30,7 +30,7 @@ Uses the following docker images:
   systemctl disable rsyslog
   echo "Storage=volatile" >> /etc/systemd/journald.conf
   ```
-  Disable wifi chip (dows not wok on firmware):
+  Disable wifi chip (wifi chip is not functional on this firmware):
   ```
   nmcli radio wifi off
   systemctl disable iwd wpa_supplicant
