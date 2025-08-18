@@ -20,6 +20,7 @@ Uses the following docker images:
 2. Remove the dashboard and additional packages like strongswan, nginx-common, php etc (to your liking)  
   ```
   sh /var/dashboard/uninstall.sh
+  systemctl disable timezone-config-check.timer server-detection.timer bobcat-watchdog.timer
   apt remove -y php* nginx* strongswan* openvpn*
   docker rm -f helium-miner portainer pktfwd
   apt -y autoremove
@@ -29,11 +30,16 @@ Uses the following docker images:
   systemctl disable rsyslog
   echo "Storage=volatile" >> /etc/systemd/journald.conf
   ```
+  Disable wifi chip (dows not wok on firmware):
+  ```
+  nmcli radio wifi off
+  ```
 
 3. Ensure latest update: `apt update && apt upgrade -y && reboot`
-4. Reboot and install docker compose `apt install docker-compose`
-5. Set root user password `passwd`
-6. Consider adding ssh-keys and disabling password based auth by adding `PasswordAuthentication no` to `/etc/ssh/ssh_config` 
+4. Reboot and install docker compose and chrony for time sync `apt -y install docker-compose chrony`
+5. Check `chrony` ntp sync status: `chronyc tracking`
+6. Set root user password `passwd`
+7. Consider adding ssh-keys and disabling password based auth by adding `PasswordAuthentication no` to `/etc/ssh/ssh_config` 
 
 ## Install
 Clone the project
