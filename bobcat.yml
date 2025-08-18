@@ -4,6 +4,7 @@
   become: true
   vars:
     region: "EU868"  # Change to your desired region: US915 | EU868 | EU433 | CN470 | CN779 | AU915 | AS923 | KR920 | IN865
+    device_model: "285"    # Change to match your unit: 280 | 285 | 29x
     repo_url: "https://github.com/metrafonic/Bobcat300-DebianMinimalDocker"
     project_dir: "/opt/bobcat"
 
@@ -131,11 +132,15 @@
     register: pktfwd_stop
     changed_when: pktfwd_stop.rc == 0
 
+  - name: Set spidev path based on device model
+    set_fact:
+      spidev_path: "{{ '/dev/spidev1.0' if device_model in ['280','285'] else '/dev/spidev5.0' }}"
+
   - name: Update spidev_path in global_conf.json
     replace:
       path: "{{ project_dir }}/packet_forwarder/configs/global_conf.json"
       regexp: '"spidev_path":.*'
-      replace: '"spidev_path": "/dev/spidev1.0",'
+      replace: '"spidev_path": "{{ spidev_path }}",'
 
   - name: Remove gps_i2c_path line
     lineinfile:
