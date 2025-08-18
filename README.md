@@ -21,6 +21,7 @@ Uses the following docker images:
   ```
   sh /var/dashboard/uninstall.sh
   apt remove -y php* nginx* strongswan* openvpn*
+  docker rm -f helium-miner portainer pktfwd
   apt -y autoremove
   ```
   Reduce SD wear
