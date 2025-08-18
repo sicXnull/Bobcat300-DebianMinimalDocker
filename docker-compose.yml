@@ -21,7 +21,6 @@ services:
     image: quay.io/team-helium/miner:gateway-latest
     command: ["helium_gateway", "server"]
     environment:
-      - GW_REGION=EU868
       - RUST_BACKTRACE=1
       - GW_LISTEN=0.0.0.0:1680
       - GW_KEYPAIR=ecc://i2c-2:96?slot=0
