@@ -65,5 +65,5 @@ docker compose logs -f --tail=1000
 ```
 Check miner animal name:
 ```
-docker-compose exec helium-miner helium_gateway key info
+docker-compose exec miner helium_gateway key info
 ```
