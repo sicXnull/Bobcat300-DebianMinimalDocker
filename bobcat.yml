@@ -169,3 +169,14 @@
     debug:
       var: logs.stdout_lines
 
+
+  - name: Check miner animal name
+    shell: docker-compose exec -T miner helium_gateway key info
+    args:
+      chdir: "{{ project_dir }}"
+    register: miner_info
+    changed_when: false
+
+  - name: Show miner animal name
+    debug:
+      msg: "{{ miner_info.stdout }}"
