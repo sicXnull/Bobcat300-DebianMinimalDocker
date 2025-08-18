@@ -9,7 +9,7 @@ services:
       REGION: EU868
     privileged: true
     depends_on:
-      - helium-miner
+      - miner
     volumes:
       - ./packet_forwarder/configs:/opt/packet_forwarder/configs
       - ./packet_forwarder/tools:/opt/packet_forwarder/tools
