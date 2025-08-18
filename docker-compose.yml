@@ -8,12 +8,13 @@ services:
       VENDOR: bobcat
       REGION: EU868
     privileged: true
+    logging:
+      driver: "none"
     depends_on:
       - miner
     volumes:
       - ./packet_forwarder/configs:/opt/packet_forwarder/configs
       - ./packet_forwarder/tools:/opt/packet_forwarder/tools
-    network_mode: host
     restart: always
 
   miner:
@@ -30,6 +31,4 @@ services:
       - /dev/i2c-2:/dev/i2c-2
     security_opt:
       - label=disable
-    network_mode: host
     restart: unless-stopped
-
