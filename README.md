@@ -14,8 +14,17 @@ Uses the following docker images:
 - [sicXnull](https://github.com/sicXnull) has done some amazing work on reverse engineering the bobcat 300. Check out their repos:
   - https://github.com/sicXnull/Bobcat300-Debian
   - https://github.com/sicXnull/BobcatDashboard
- 
-## Preparations
+
+## Ansible config:
+1. Run a `ssh-copy-id root@192.168.x.x` to the host, update `hosts.ini` file
+2. Install:  
+```
+ansible-playbook -i hosts.ini bobcat.yml
+```
+
+## Manual config: 
+
+### Preparations
 1. Install the debian image provided by https://github.com/sicXnull/Bobcat300-Debian
 2. Remove the dashboard and additional packages like strongswan, nginx-common, php etc (to your liking)  
   ```
@@ -42,7 +51,7 @@ Uses the following docker images:
 6. Set root user password `passwd`
 7. Consider adding ssh-keys and disabling password based auth by adding `PasswordAuthentication no` to `/etc/ssh/ssh_config` 
 
-## Install
+### Install
 Clone the project
 ```
 git clone https://github.com/metrafonic/Bobcat300-DebianMinimalDocker bobcat && cd bobcat

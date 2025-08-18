@@ -1,0 +1,171 @@
+---
+- name: Setup Bobcat 300 Helium Gateway
+  hosts: bobcat
+  become: true
+  vars:
+    region: "EU868"  # Change to your desired region: US915 | EU868 | EU433 | CN470 | CN779 | AU915 | AS923 | KR920 | IN865
+    repo_url: "https://github.com/metrafonic/Bobcat300-DebianMinimalDocker"
+    project_dir: "/opt/bobcat"
+
+  tasks:
+
+  - name: Remove dashboard and unnecessary packages
+    block:
+      - name: Uninstall dashboard if exists
+        shell: sh /var/dashboard/uninstall.sh
+        ignore_errors: yes
+
+      - name: Disable unwanted timers
+        systemd:
+          name: "{{ item }}"
+          enabled: no
+          state: stopped
+        loop:
+          - timezone-config-check.timer
+          - server-detection.timer
+          - bobcat-watchdog.timer
+
+      - name: Remove unnecessary packages
+        apt:
+          name: "{{ item }}"
+          state: absent
+        loop:
+          - php*
+          - nginx*
+          - strongswan*
+          - openvpn*
+        ignore_errors: yes
+
+      - name: Autoremove unused packages
+        apt:
+          autoremove: yes
+          purge: yes
+
+  - name: Reduce SD card wear
+    block:
+      - name: Disable rsyslog
+        systemd:
+          name: rsyslog
+          enabled: no
+          state: stopped
+
+      - name: Ensure journald storage is volatile
+        lineinfile:
+          path: /etc/systemd/journald.conf
+          regexp: '^Storage='
+          line: "Storage=volatile"
+          state: present
+
+  - name: Disable Wi-Fi chip
+    block:
+      - name: Turn off Wi-Fi
+        command: nmcli radio wifi off
+        ignore_errors: yes
+
+      - name: Disable Wi-Fi services
+        systemd:
+          name: "{{ item }}"
+          enabled: no
+          state: stopped
+        loop:
+          - iwd
+          - wpa_supplicant
+        ignore_errors: yes
+
+  - name: Update system
+    apt:
+      update_cache: yes
+      upgrade: dist
+      autoremove: yes
+
+  - name: Install Docker Compose and Chrony
+    apt:
+      name:
+        - docker-compose
+        - chrony
+      state: present
+
+  - name: Ensure chrony is running
+    systemd:
+      name: chrony
+      state: started
+      enabled: yes
+
+  - name: Display chrony tracking
+    command: chronyc tracking
+    register: chrony_status
+    ignore_errors: yes
+
+  - name: Display chrony status
+    debug:
+      var: chrony_status.stdout_lines
+
+  - name: Clone Bobcat Docker project (idempotent)
+    git:
+      repo: "{{ repo_url }}"
+      dest: "{{ project_dir }}"
+      version: main
+      update: yes
+
+  - name: Ensure REGION is set in docker-compose.yml
+    replace:
+      path: "{{ project_dir }}/docker-compose.yml"
+      regexp: 'REGION: .*'
+      replace: "REGION: {{ region }}"
+
+  - name: Start pktfwd once to create region file
+    shell: docker-compose up -d pktfwd
+    args:
+      chdir: "{{ project_dir }}"
+    register: pktfwd_start
+    changed_when: pktfwd_start.rc == 0
+
+  - name: Wait 2 seconds before stopping pktfwd
+    pause:
+      seconds: 2
+
+  - name: Stop pktfwd container if running
+    shell: docker-compose down
+    args:
+      chdir: "{{ project_dir }}"
+    register: pktfwd_stop
+    changed_when: pktfwd_stop.rc == 0
+
+  - name: Update spidev_path in global_conf.json
+    replace:
+      path: "{{ project_dir }}/packet_forwarder/configs/global_conf.json"
+      regexp: '"spidev_path":.*'
+      replace: '"spidev_path": "/dev/spidev1.0",'
+
+  - name: Remove gps_i2c_path line
+    lineinfile:
+      path: "{{ project_dir }}/packet_forwarder/configs/global_conf.json"
+      regexp: '"gps_i2c_path":.*'
+      state: absent
+
+  - name: Start all containers
+    shell: docker-compose up -d
+    args:
+      chdir: "{{ project_dir }}"
+    register: docker_start
+    changed_when: docker_start.rc == 0
+
+  - name: Wait for miner container to be ready
+    shell: |
+      until docker-compose ps | grep -q miner; do
+        sleep 1
+      done
+    args:
+      chdir: "{{ project_dir }}"
+
+  - name: Show last 1000 log lines from containers
+    shell: docker-compose logs --tail=1000
+    args:
+      chdir: "{{ project_dir }}"
+    register: logs
+    changed_when: false
+
+  - name: Display logs
+    debug:
+      var: logs.stdout_lines
+
