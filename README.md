@@ -33,6 +33,7 @@ Uses the following docker images:
   Disable wifi chip (dows not wok on firmware):
   ```
   nmcli radio wifi off
+  systemctl disable iwd wpa_supplicant
   ```
 
 3. Ensure latest update: `apt update && apt upgrade -y && reboot`
