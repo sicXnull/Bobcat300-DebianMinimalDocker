@@ -42,6 +42,11 @@
           autoremove: yes
           purge: yes
 
+      - name: Remove old helium-related containers
+        shell: docker rm -f helium-miner portainer pktfwd || true
+        ignore_errors: yes
+        changed_when: true
+
   - name: Reduce SD card wear
     block:
       - name: Disable rsyslog
