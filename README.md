@@ -79,7 +79,7 @@ git clone https://github.com/metrafonic/Bobcat300-DebianMinimalDocker bobcat && 
 ```
 
 **Select the appropriate docker-compose file for your device:**
-- **G285/G280**: Use `docker-compose-G285.yml`
+- **G285**: Use `docker-compose-G285.yml`
 - **G29X**: Use `docker-compose-G29X.yml`
 
 Modify the `REGION` value in your selected docker-compose file. The `REGION` can be one of the following values:  
@@ -87,7 +87,7 @@ Modify the `REGION` value in your selected docker-compose file. The `REGION` can
 
 Start the pf once, so that it creates the region file. We must modify it.
 
-**For G285/G280:**
+**For G285:**
 ```bash
 docker-compose -f docker-compose-G285.yml up -d pktfwd && sleep 1 && docker-compose -f docker-compose-G285.yml down
 ```
@@ -140,6 +140,6 @@ docker-compose -f docker-compose-G285.yml exec miner helium_gateway key info
 
 If you encounter issues:
 - Verify the correct docker-compose file is being used for your device model
-- Check that the `spidev_path` matches your device (spidev1.0 for G285/G280, spidev5.0 for G29X)
+- Check that the `spidev_path` matches your device (spidev1.0 for G285, spidev5.0 for G29X)
 - Ensure the region is set correctly in your docker-compose file
 - Check container logs for errors: `docker-compose -f <your-compose-file> logs`
