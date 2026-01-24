@@ -65,11 +65,11 @@ services:
     environment:
       RUST_BACKTRACE: "1"
       GW_LISTEN: 0.0.0.0:1680
-      GW_KEYPAIR: ecc://i2c-5:96?slot=0
-      GW_ONBOARDING: ecc://i2c-5:96?slot=15
+      GW_KEYPAIR: ecc://i2c-1:96?slot=0
+      GW_ONBOARDING: ecc://i2c-1:96?slot=15
 
     devices:
-      - /dev/i2c-5:/dev/i2c-5
+      - /dev/i2c-1:/dev/i2c-1
 
     security_opt:
       - label=disable
