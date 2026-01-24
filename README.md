@@ -1,145 +1,227 @@
 # Bobcat300-DebianMinimalDocker
-A minimal docker-compose config for running a helium lora gateway on a bobcat 300.
+
+A minimal docker-compose setup for running a **Helium LoRa gateway** on a **Bobcat 300** using Debian and Docker.
+
+---
 
 ## Details
-Currently only tested on the `G285/29X`
 
-Uses the following docker images:
-- `heliumdiy/sx1302_hal` - Fast and common pf used by most diy miners.
-- `quay.io/team-helium/miner:gateway-latest` - Official gateway image
+Currently tested on:
+- **G285 / G29X**
+- **G280**
 
-### Credits:
-- r00t1ng - suppling the initial missing ldo reset script
-- [sicXnull](https://github.com/sicXnull) has done some amazing work on reverse engineering the bobcat 300. Check out their repos:
-  - https://github.com/sicXnull/Bobcat300-Debian
-  - https://github.com/sicXnull/BobcatDashboard
+Uses the following Docker images:
+- **heliumdiy/sx1302_hal** – Fast and common packet forwarder used by most DIY miners. Used on 29x/285
+- **quay.io/team-helium/miner:gateway-latest** – Official Helium gateway image
+- **crankkster/pktfwd** – SX1301 Packet Forwarder for G280
 
-## Ansible config:
-1. Install the debian image provided by https://github.com/sicXnull/Bobcat300-Debian
-2. Run a `ssh-copy-id root@192.168.x.x` to the host, update `hosts.ini` file, change the bobcat root password with `passwd`
-3. Set `region` and `device_model` in `bobcat.yml` file
-4. Install:  
-```bash
-ansible-playbook -i hosts.ini bobcat.yml
-```
+---
 
-## Manual config: 
+## Credits
+
+- **r00t1ng** – Supplying the initial missing LDO reset script  
+- **sicXnull** – Extensive reverse engineering of the Bobcat 300  
+  - https://github.com/sicXnull/Bobcat300-Debian  
+  - https://github.com/sicXnull/BobcatDashboard  
+
+---
+
+## Ansible Config
+
+1. Install the Debian image from:  
+   https://github.com/sicXnull/Bobcat300-Debian
+
+2. Copy SSH keys to the host:
+   ```bash
+   ssh-copy-id root@192.168.x.x
+   ```
+   Update `hosts.ini`, then change the root password:
+   ```bash
+   passwd
+   ```
+
+3. Set `region` and `device_model` in `bobcat.yml`
+
+4. Run:
+   ```bash
+   ansible-playbook -i hosts.ini bobcat.yml
+   ```
+
+---
+
+## Manual Config
 
 ### Preparations
-1. Install the debian image provided by https://github.com/sicXnull/Bobcat300-Debian
 
-2. Remove the dashboard and additional packages like strongswan, nginx-common, php etc (to your liking)  
+1. Install the Debian image from:  
+   https://github.com/sicXnull/Bobcat300-Debian
+
+2. Remove the dashboard and unnecessary packages (optional):
+   ```bash
+   sh /var/dashboard/uninstall.sh
+   systemctl disable timezone-config-check.timer server-detection.timer bobcat-watchdog.timer
+   apt remove -y php* nginx* strongswan* openvpn*
+   docker rm -f helium-miner portainer pktfwd
+   apt -y autoremove
+   ```
+
+3. Reduce SD card wear:
+   ```bash
+   systemctl disable rsyslog
+   echo "Storage=volatile" >> /etc/systemd/journald.conf
+   ```
+
+4. Disable Wi-Fi (not functional on this firmware):
+   ```bash
+   nmcli radio wifi off
+   systemctl disable iwd wpa_supplicant
+   ```
+
+5. Update system and reboot:
+   ```bash
+   apt update && apt upgrade -y && reboot
+   ```
+
+6. Install Docker Compose and Chrony:
+   ```bash
+   apt -y install docker-compose chrony
+   ```
+
+7. Verify time sync:
+   ```bash
+   chronyc tracking
+   ```
+
+8. Set root password:
+   ```bash
+   passwd
+   ```
+
+9. (Optional) Disable password-based SSH authentication by adding:
+   ```
+   PasswordAuthentication no
+   ```
+   to `/etc/ssh/ssh_config`
+
+---
+
+## Install
+
+Clone the repository:
 ```bash
-sh /var/dashboard/uninstall.sh
-systemctl disable timezone-config-check.timer server-detection.timer bobcat-watchdog.timer
-apt remove -y php* nginx* strongswan* openvpn*
-docker rm -f helium-miner portainer pktfwd
-apt -y autoremove
+git clone https://github.com/metrafonic/Bobcat300-DebianMinimalDocker bobcat
+cd bobcat
 ```
 
-3. Reduce SD wear
-```bash
-systemctl disable rsyslog
-echo "Storage=volatile" >> /etc/systemd/journald.conf
+---
+
+## Select the Correct docker-compose File
+
+- **G285** ? `docker-compose-G285.yml`
+- **G29X** ? `docker-compose-G29X.yml`
+- **G280** ? `docker-compose-G280.yml`
+
+Set the `REGION` variable in the selected file.
+
+Valid regions:
+```
+US915 | EU868 | EU433 | CN470 | CN779 | AU915 | AS923 | KR920 | IN865
 ```
 
-4. Disable wifi chip (wifi chip is not functional on this firmware):
-```bash
-nmcli radio wifi off
-systemctl disable iwd wpa_supplicant
-```
+---
 
-5. Ensure latest update: 
-```bash
-apt update && apt upgrade -y && reboot
-```
+## Device-Specific Setup
 
-6. Reboot and install docker compose and chrony for time sync 
-```bash
-apt -y install docker-compose chrony
-```
+### G285 / G29X (First-Run Config Required)
 
-7. Check `chrony` ntp sync status: 
-```bash
-chronyc tracking
-```
+Start `pktfwd` once to generate the config, then stop it.
 
-8. Set root user password 
-```bash
-passwd
-```
-
-9. Consider adding ssh-keys and disabling password based auth by adding `PasswordAuthentication no` to `/etc/ssh/ssh_config` 
-
-### Install
-
-Clone the project:
-```bash
-git clone https://github.com/metrafonic/Bobcat300-DebianMinimalDocker bobcat && cd bobcat
-```
-
-**Select the appropriate docker-compose file for your device:**
-- **G285**: Use `docker-compose-G285.yml`
-- **G29X**: Use `docker-compose-G29X.yml`
-
-Modify the `REGION` value in your selected docker-compose file. The `REGION` can be one of the following values:  
-`US915 | EU868 | EU433 | CN470 | CN779 | AU915 | AS923 | KR920 | IN865`
-
-Start the pf once, so that it creates the region file. We must modify it.
-
-**For G285:**
+**G285**
 ```bash
 docker-compose -f docker-compose-G285.yml up -d pktfwd && sleep 1 && docker-compose -f docker-compose-G285.yml down
 ```
 
-**For G29X:**
+**G29X**
 ```bash
 docker-compose -f docker-compose-G29X.yml up -d pktfwd && sleep 1 && docker-compose -f docker-compose-G29X.yml down
 ```
 
-Edit `packet_forwarder/configs/global_conf.json` and replace the `spidev_path:` value:
+Edit:
+```
+packet_forwarder/configs/global_conf.json
+```
 
-**For G285:**
+Set `spidev_path`:
+
+**G285**
 ```json
 "spidev_path": "/dev/spidev1.0",
 ```
 
-**For G29X:**
+**G29X**
 ```json
 "spidev_path": "/dev/spidev5.0",
 ```
 
-Remove the line:
+Remove this line:
 ```json
 "gps_i2c_path": "/dev/i2c-1",
 ```
 
-Start again with your selected docker-compose file:
+Start normally:
 
-**For G285:**
+**G285**
 ```bash
-docker-compose -f docker-compose-G285.yml up -d 
+docker-compose -f docker-compose-G285.yml up -d
 ```
 
-**For G29X:**
+**G29X**
 ```bash
-docker-compose -f docker-compose-G29X.yml up -d 
+docker-compose -f docker-compose-G29X.yml up -d
 ```
 
-Check the logs (replace with your compose file):
+---
+
+### G280 (No First-Run Config Needed)
+
+For **G280**, no pre-run or config edits are required.
+
+Simply start:
+```bash
+docker-compose -f docker-compose-G280.yml up -d
+```
+
+Once started, it is fully operational.
+
+---
+
+## Verification
+
+Check logs:
 ```bash
 docker-compose -f docker-compose-G285.yml logs -f --tail=1000
 ```
 
-Check miner animal name (replace with your compose file):
+Check miner animal name:
 ```bash
 docker-compose -f docker-compose-G285.yml exec miner helium_gateway key info
 ```
 
+(Replace the compose file name as needed.)
+
+---
+
 ## Troubleshooting
 
-If you encounter issues:
-- Verify the correct docker-compose file is being used for your device model
-- Check that the `spidev_path` matches your device (spidev1.0 for G285, spidev5.0 for G29X)
-- Ensure the region is set correctly in your docker-compose file
-- Check container logs for errors: `docker-compose -f <your-compose-file> logs`
+- Ensure the correct docker-compose file is used for your device model
+- Verify the `REGION` value is correct
+- Check container logs:
+  ```bash
+  docker-compose -f <compose-file>.yml logs
+  ```
+
+### Device Notes
+
+- **G285** ? `spidev1.0`
+- **G29X** ? `spidev5.0`
+- **G280** ? no initial start/stop required; `up -d` is sufficient
